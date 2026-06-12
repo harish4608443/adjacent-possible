@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { GraphNode, UserProfile } from "@/lib/types";
+import { GraphNode, UserProfile, Commitment } from "@/lib/types";
 import {
   X,
   Loader2,
@@ -11,10 +11,12 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
-  Briefcase,
-  ExternalLink,
   BookOpen,
+  HelpCircle,
+  Shield,
 } from "lucide-react";
+import PreMortemModal from "./PreMortemModal";
+import WhyNotModal from "./WhyNotModal";
 
 interface NodeDetail {
   detailedPlan: string;
@@ -30,7 +32,7 @@ interface NodePanelProps {
   node: GraphNode;
   profile: UserProfile;
   onClose: () => void;
-  onMarkDone: (nodeId: string) => void;
+  onMarkDone: (nodeId: string, commitment: Omit<Commitment, "id" | "committedAt">) => void;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -76,6 +78,8 @@ export default function NodePanel({
   const [detail, setDetail] = useState<NodeDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [showPreMortem, setShowPreMortem] = useState(false);
+  const [showWhyNot, setShowWhyNot] = useState(false);
   const isDone = node.status === "done";
 
   const loadDetail = async () => {
@@ -200,7 +204,7 @@ export default function NodePanel({
             <div className="flex items-center gap-2 mb-2">
               <BookOpen size={13} className="text-blue-400" />
               <span className="text-xs font-semibold text-blue-400 uppercase tracking-wide">
-                Skills you may need to build
+                Skills to build
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -208,43 +212,6 @@ export default function NodePanel({
                 <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-blue-900/20 border border-blue-800/30 text-blue-300">
                   {s}
                 </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Job market links */}
-        {node.jobSearchTerms?.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Briefcase size={13} className="text-emerald-400" />
-              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">
-                Related roles in job market
-              </span>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {node.jobSearchTerms.map((term, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 flex-1">{term}</span>
-                  <div className="flex gap-1.5">
-                    <a
-                      href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(term)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-blue-900/30 border border-blue-800/40 text-blue-300 hover:bg-blue-800/40 transition-colors"
-                    >
-                      LinkedIn <ExternalLink size={9} />
-                    </a>
-                    <a
-                      href={`https://www.indeed.com/jobs?q=${encodeURIComponent(term)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 transition-colors"
-                    >
-                      Indeed <ExternalLink size={9} />
-                    </a>
-                  </div>
-                </div>
               ))}
             </div>
           </div>
@@ -328,22 +295,50 @@ export default function NodePanel({
       </div>
 
       {/* Footer action */}
-      <div className="p-5 border-t border-gray-800">
+      <div className="p-5 border-t border-gray-800 space-y-3">
         {isDone ? (
           <div className="flex items-center gap-2 text-emerald-400 text-sm justify-center py-2">
             <CheckCircle2 size={16} />
-            <span>Marked as done</span>
+            <span>Committed — tracking in check-in</span>
           </div>
         ) : (
-          <button
-            onClick={() => onMarkDone(node.id)}
-            className="w-full py-3 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium text-sm transition-colors"
-          >
-            <CheckCircle2 size={16} />
-            Done — evolve my graph
-          </button>
+          <>
+            <button
+              onClick={() => setShowPreMortem(true)}
+              className="w-full py-3 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium text-sm transition-colors"
+            >
+              <Shield size={16} />
+              Commit to this — run pre-mortem first
+            </button>
+            <button
+              onClick={() => setShowWhyNot(true)}
+              className="w-full py-2.5 flex items-center justify-center gap-2 border border-gray-700 hover:border-violet-600 text-gray-400 hover:text-violet-300 rounded-xl font-medium text-sm transition-all"
+            >
+              <HelpCircle size={15} />
+              What&apos;s actually stopping me?
+            </button>
+          </>
         )}
       </div>
+
+      {/* Modals */}
+      {showPreMortem && (
+        <PreMortemModal
+          node={node}
+          profile={profile}
+          onProceed={(commitment) => {
+            setShowPreMortem(false);
+            onMarkDone(node.id, commitment);
+          }}
+          onCancel={() => setShowPreMortem(false)}
+        />
+      )}
+      {showWhyNot && (
+        <WhyNotModal
+          nodeLabel={node.label}
+          onClose={() => setShowWhyNot(false)}
+        />
+      )}
     </div>
   );
 }

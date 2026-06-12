@@ -2,16 +2,24 @@ import { AppState } from "./types";
 
 const STATE_KEY = "adjacent_possible_state";
 
+const DEFAULT_STATE: AppState = {
+  profile: null,
+  graph: null,
+  selectedNodeId: null,
+  intakeComplete: false,
+  commitments: [],
+  journal: [],
+  checkIns: [],
+};
+
 export function loadState(): AppState {
-  if (typeof window === "undefined") {
-    return { profile: null, graph: null, selectedNodeId: null, intakeComplete: false };
-  }
+  if (typeof window === "undefined") return DEFAULT_STATE;
   try {
     const raw = localStorage.getItem(STATE_KEY);
-    if (!raw) return { profile: null, graph: null, selectedNodeId: null, intakeComplete: false };
-    return JSON.parse(raw) as AppState;
+    if (!raw) return DEFAULT_STATE;
+    return { ...DEFAULT_STATE, ...JSON.parse(raw) } as AppState;
   } catch {
-    return { profile: null, graph: null, selectedNodeId: null, intakeComplete: false };
+    return DEFAULT_STATE;
   }
 }
 

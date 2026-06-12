@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { loadState, saveState } from "@/lib/store";
-import { AdjacentGraph, GraphNode, UserProfile } from "@/lib/types";
+import { AdjacentGraph, Commitment, GraphNode, UserProfile } from "@/lib/types";
 import NodePanel from "@/components/NodePanel";
 import {
   RefreshCw,
@@ -70,7 +70,7 @@ export default function ExplorePage() {
   };
 
   const handleMarkDone = useCallback(
-    async (nodeId: string) => {
+    async (nodeId: string, commitment: Omit<Commitment, "id" | "committedAt">) => {
       if (!graph || !profile) return;
       const doneNode = graph.nodes.find((n) => n.id === nodeId);
       const updated: AdjacentGraph = {
@@ -78,11 +78,21 @@ export default function ExplorePage() {
         nodes: graph.nodes.map((n) => n.id === nodeId ? { ...n, status: "done" } : n),
       };
       const newCompletedMoves = [...(graph.completedMoves ?? []), doneNode?.label ?? nodeId];
+
+      // Save commitment to store
+      const newCommitment: Commitment = {
+        ...commitment,
+        id: `c_${Date.now()}`,
+        committedAt: new Date().toISOString(),
+      };
+      const currentState = loadState();
+      const updatedCommitments = [...(currentState.commitments ?? []), newCommitment];
+
       setGraph(updated);
-      saveState({ graph: updated });
+      saveState({ graph: updated, commitments: updatedCommitments });
       setSelectedNodeId(null);
 
-      // Auto-evolve the graph based on what's now been completed
+      // Auto-evolve the graph
       setRegenerating(true);
       try {
         const res = await fetch("/api/generate", {
@@ -96,7 +106,6 @@ export default function ExplorePage() {
         });
         const data = await res.json();
         if (data.graph) {
-          // Preserve done status from current graph
           const doneIds = new Set(updated.nodes.filter(n => n.status === "done").map(n => n.label));
           const evolvedGraph: AdjacentGraph = {
             ...data.graph,

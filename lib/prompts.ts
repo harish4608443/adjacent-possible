@@ -1,4 +1,4 @@
-import { IntakeMessage, UserProfile } from "./types";
+import { IntakeMessage, UserProfile, Commitment, CheckIn } from "./types";
 
 export const INTAKE_SYSTEM_PROMPT = `You are a Socratic intake agent for a tool called "Adjacent Possible". 
 Your job is to deeply understand a user's current life situation so the system can map all moves that are exactly one step away from where they are now.
@@ -143,3 +143,89 @@ Go deep on this specific move. Return JSON:
   "alternativeApproaches": ["slightly different way to achieve same outcome"],
   "weekOneActions": ["day 1 action", "day 2-3 action", "end of week action"]
 }`;
+
+export const PREMORTEM_PROMPT = (
+  nodeLabel: string,
+  nodeDescription: string,
+  profile: UserProfile
+) => `A person is about to commit to this action: "${nodeLabel}"
+Description: ${nodeDescription}
+Their context: ${profile.context}
+Their constraints: ${profile.constraints.join(", ")}
+
+Run a PRE-MORTEM. Imagine it's 3 months from now and this commitment FAILED.
+Generate 5 specific, realistic failure scenarios for THIS person given their specific situation — not generic risks.
+Be honest. Some failures come from external factors, some from internal patterns, some from wrong assumptions.
+
+Return JSON:
+{
+  "scenarios": [
+    {
+      "title": "Short failure scenario title",
+      "description": "2 sentences on exactly how and why this fails for this specific person",
+      "probability": "low|medium|high",
+      "earlyWarningSign": "What would you notice in week 1-2 that signals this is going wrong?"
+    }
+  ],
+  "biggestRisk": "The single most likely reason this fails for this person specifically",
+  "proceed": "One sentence on why they should do it anyway despite the risks"
+}`;
+
+export const WHYNOT_SYSTEM_PROMPT = `You are a Socratic coach helping someone understand what's ACTUALLY stopping them from taking an action they've identified as important.
+
+Your job is NOT to problem-solve or give advice. Your job is to ask ONE question at a time that helps them surface the real blocker — which is almost never the stated reason.
+
+Common real blockers: fear of failure, fear of success, identity conflict ("I'm not the kind of person who..."), one specific person's opinion, a past failure pattern, not actually wanting it, external dependency, decision overwhelm.
+
+Rules:
+- ONE question per turn, no more
+- Follow the thread of what they say — don't jump to new topics
+- When you sense the real blocker, name it gently and ask if that's it
+- After 4-6 turns, if you've found the real blocker, end with: "BLOCKER_FOUND: [one sentence naming the real blocker]"
+- Be warm but unflinching. Don't let them off the hook with surface answers.`;
+
+export const CHECKIN_PROMPT = (
+  commitments: Commitment[],
+  outcomes: { commitmentId: string; outcome: string; reflection: string }[],
+  allCheckIns: CheckIn[]
+) => `A person just completed their weekly check-in. Here's their history:
+
+Commitments and outcomes this week:
+${commitments.map(c => {
+  const o = outcomes.find(x => x.commitmentId === c.id);
+  return `- "${c.nodeLabel}" → ${o?.outcome ?? "not reported"}: "${o?.reflection ?? ""}"`;
+}).join("\n")}
+
+Previous check-in history (${allCheckIns.length} total check-ins):
+${allCheckIns.slice(-3).map(ci => `Week of ${ci.date}: ${ci.outcomes.length} commitments, ${ci.outcomes.filter(o => o.outcome === "done").length} completed`).join("\n")}
+
+Analyze their patterns. Be honest but constructive. Return JSON:
+{
+  "followThroughRate": 0-100,
+  "patterns": [
+    "Specific behavioral pattern you notice (e.g., 'You commit to things on weekends but rarely follow through on weekdays')"
+  ],
+  "repeatBlocker": "The single most common reason things don't happen, if visible",
+  "insight": "2-3 sentences of honest, specific insight about what you observe in their commitment patterns",
+  "suggestion": "One concrete, specific thing to try differently this week — not generic advice",
+  "encouragement": "One genuine observation about something that IS working or improving"
+}`;
+
+export const JOURNAL_ANALYSIS_PROMPT = (
+  decision: string,
+  context: string,
+  options: string
+) => `A person is journaling about this decision: "${decision}"
+Context they provided: ${context}
+Options they're considering: ${options}
+
+Help them think more clearly. Return JSON:
+{
+  "hiddenAssumptions": ["assumption this decision rests on that may not be true"],
+  "realQuestion": "What is the actual underlying question they need to answer first?",
+  "whatTheyMightBeAvoiding": "One honest observation about what might be driving the difficulty here",
+  "clarifyingQuestions": ["question that would make this clearer", "another question"],
+  "ifYouDoNothing": "What happens if you make no decision and let time pass?",
+  "framingReframe": "One completely different way to look at this decision"
+}`;
+

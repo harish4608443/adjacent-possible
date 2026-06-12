@@ -1,3 +1,51 @@
+export interface Commitment {
+  id: string;
+  nodeId: string;
+  nodeLabel: string;
+  nodeDescription: string;
+  category: string;
+  committedAt: string;
+  knownRisks: string[];
+  outcome?: "done" | "partial" | "not_done";
+  reflection?: string;
+  revisitedAt?: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  decision: string;
+  context: string;
+  options: string;
+  createdAt: string;
+  resurfaceAt?: string;
+  outcome?: string;
+  revisitedAt?: string;
+  analysis?: {
+    hiddenAssumptions: string[];
+    realQuestion: string;
+    whatTheyMightBeAvoiding: string;
+    clarifyingQuestions: string[];
+    ifYouDoNothing: string;
+    framingReframe: string;
+  };
+}
+
+export interface CheckIn {
+  id: string;
+  date: string;
+  outcomes: { commitmentId: string; outcome: "done" | "partial" | "not_done"; reflection: string }[];
+  patternInsight?: string;
+}
+
+export interface PatternAnalysis {
+  repeatBlockers: string[];
+  followThroughRate: number;
+  strongestCategory: string;
+  weakestCategory: string;
+  insight: string;
+  suggestion: string;
+}
+
 export interface GitHubData {
   username: string;
   name: string;
@@ -76,4 +124,7 @@ export interface AppState {
   graph: AdjacentGraph | null;
   selectedNodeId: string | null;
   intakeComplete: boolean;
+  commitments: Commitment[];
+  journal: JournalEntry[];
+  checkIns: CheckIn[];
 }

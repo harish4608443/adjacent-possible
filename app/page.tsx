@@ -2,16 +2,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { clearState, loadState } from "@/lib/store";
-import { ArrowRight, Compass, GitBranch, Zap } from "lucide-react";
+import { ArrowRight, Compass, GitBranch, Zap, CheckCircle2, BookOpen } from "lucide-react";
 
 export default function Home() {
   const [hasExisting, setHasExisting] = useState(false);
+  const [pendingCheckins, setPendingCheckins] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const state = loadState();
     setHasExisting(state.intakeComplete && !!state.graph);
+    const pending = (state.commitments ?? []).filter((c) => !c.outcome).length;
+    setPendingCheckins(pending);
   }, []);
 
   if (!mounted) return null;
@@ -70,6 +73,31 @@ export default function Home() {
             </Link>
           )}
         </div>
+
+        {/* Accountability tools if graph exists */}
+        {hasExisting && (
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+            <Link
+              href="/checkin"
+              className="flex items-center gap-2 px-5 py-3 border border-gray-800 hover:border-emerald-700 text-gray-400 hover:text-emerald-300 rounded-xl text-sm font-medium transition-all"
+            >
+              <CheckCircle2 size={15} />
+              Weekly check-in
+              {pendingCheckins > 0 && (
+                <span className="ml-1 bg-emerald-700 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
+                  {pendingCheckins}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/journal"
+              className="flex items-center gap-2 px-5 py-3 border border-gray-800 hover:border-violet-700 text-gray-400 hover:text-violet-300 rounded-xl text-sm font-medium transition-all"
+            >
+              <BookOpen size={15} />
+              Decision journal
+            </Link>
+          </div>
+        )}
 
         {hasExisting && (
           <button
