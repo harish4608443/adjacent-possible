@@ -41,10 +41,10 @@ export default function Home() {
         </h1>
 
         <p className="text-lg text-gray-400 mb-4 max-w-2xl mx-auto leading-relaxed">
-          Built by Harish Renganathan for anyone who wants to treat decisions as
-          the frontier of change. Not a 5-year plan. Not a to-do list. This maps
-          every move that is <em className="text-gray-200">exactly one step away</em>
-          from where you are right now — ranked by effort, leverage, and what each move unlocks.
+          I built this to make decisions feel less scary and more useful —
+          a small engine from Harish Renganathan that helps the next move land.
+          Not a 5-year plan. Not a to-do list. This maps every move that is <em className="text-gray-200">exactly one step away</em> from where
+          you are right now — ranked by effort, leverage, and what each move unlocks.
         </p>
 
         <p className="text-sm text-gray-500 mb-12 max-w-xl mx-auto">
